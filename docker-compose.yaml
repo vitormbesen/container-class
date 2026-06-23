@@ -4,10 +4,11 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-postgres}
       PGDATA: /var/lib/postgresql/data/pgdata
+      PGPORT: ${DB_PORT:-5432}
     volumes:
       - postgres-vol:/var/lib/postgresql/data/pgdata
     #ports:
@@ -21,19 +22,19 @@ services:
       timeout: 10s
   
   # --- Backend Flask Application
-  backend-1:
+  x-backend: &backend
     build: 
       context: .  # project root
       dockerfile: ./docker/backend.Dockerfile
     restart: unless-stopped
     environment: # from start-backend.sh
       FLASK_APP: "run.py"
-      FLASK_DB_TYPE: "postgres"
-      FLASK_DB_USER: "postgres"
-      FLASK_DB_NAME: "postgres"
-      FLASK_DB_PASSWORD: "postgres"
-      FLASK_DB_HOST: "postgres"
-      FLASK_DB_PORT: "5432"
+      FLASK_DB_TYPE: ${DB_TYPE:-postgres}
+      FLASK_DB_USER: ${DB_USER:-postgres}
+      FLASK_DB_NAME: ${DB_NAME:-postgres}
+      FLASK_DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      FLASK_DB_HOST: ${DB_HOST:-postgres}
+      FLASK_DB_PORT: ${DB_PORT:-5432}
     #ports: 
     #  "5000:5000"
     depends_on:
@@ -48,32 +49,13 @@ services:
     networks:
       - backend-network
 
+  backend-1:
+    <<: *backend
+    container_name: backend-1
+  
   backend-2:
-    build: 
-      context: .  # project root
-      dockerfile: ./docker/backend.Dockerfile
-    restart: unless-stopped
-    environment: # from start-backend.sh
-      FLASK_APP: "run.py"
-      FLASK_DB_TYPE: "postgres"
-      FLASK_DB_USER: "postgres"
-      FLASK_DB_NAME: "postgres"
-      FLASK_DB_PASSWORD: "postgres"
-      FLASK_DB_HOST: "postgres"
-      FLASK_DB_PORT: "5432"
-    #ports: 
-    #  "5000:5000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-    networks:
-      - backend-network
+    <<: *backend
+    container_name: backend-2
   
   # --- Frontend React + nginx
   frontend:
@@ -87,7 +69,7 @@ services:
       - backend-1
       - backend-2
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/"]
       interval: 15s
       timeout: 10s
       retries: 3
