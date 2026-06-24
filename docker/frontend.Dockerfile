@@ -9,8 +9,8 @@ ENV REACT_APP_BACKEND_URL=/api
 RUN npm run build
 
 # --- Runtime image: nginx + react
-FROM nginx:alpine-slim
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+FROM nginx:1.31-alpine-slim
+#COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /builder/build /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
