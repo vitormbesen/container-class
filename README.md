@@ -31,8 +31,8 @@ Uma implantação baseada em *containers* do Jogo de Adivinhação (Flask), orqu
 ├── repository/                  # Camada de abstração do database (sqlite, postgres, dynamodb)
 ├── requirements.txt             # Dependências de produção do Python
 ├── requirements-dev.txt         # Dependências de desenvolvimento do Python
-├── requirements-freeze.txt      # Versões fixadas das dependências
-├── run.py                       # Ponto de entrada da aplicação Flask
+├── requirements-freeze.txt      
+├── run.py                       # Entrypoint da aplicação Flask
 ├── start-backend.sh             # Script de inicialização local (não utilizado nos containers)
 └── tests/                       # Suíte de testes
 ```
@@ -124,7 +124,7 @@ O *container* frontend NGINX escuta na porta `80` e atua como proxy roteando as 
 Para aumentar a resiliência e a capacidade de processamento, escale o serviço `backend` horizontalmente:
 
 ```bash
-docker compose up -d --scale backend=2
+docker compose up -d --scale backend=3
 ```
 
 O NGINX detecta automaticamente os novos IPs dos *containers* do backend através do DNS embutido do Docker (`127.0.0.11`) e distribui as requisições entre todas as instâncias saudáveis.
@@ -245,14 +245,14 @@ Devido à remoção automática desse prefixo no código, o `docker-compose.yaml
 
 O backend, portanto, descobre o endereço do *database* inteiramente através de variáveis de ambiente, sem nenhum hostname *hardcoded* no código da aplicação.
 
-### Redes (*Networks*)
+### Networks
 
 Duas *networks* do tipo bridge foram definidas:
 
 - **`backend-network`** — Conecta `postgres` e `backend`. O *database* não é exposto diretamente ao host local nem ao frontend.
 - **`frontend-network`** — Conecta o `frontend` ao mundo externo (porta `80`). O frontend também participa da `backend-network` para conseguir alcançar os *containers* do backend.
 
-### Volumes (*Volumes*)
+### Volumes
 
 - **`postgres-vol`** — Um **volume** nomeado do Docker montado em `/var/lib/postgresql/data/pgdata`. Ele sobrevive à recriação de *containers* e garante a **persistência** de todos os dados do jogo.
 - **Montagem de volume de configuração** — O arquivo `nginx/nginx.conf` é injetado (*bind mount*) como read-only no *container* do frontend, permitindo alterações na configuração de rede instantaneamente sem exigir um **rebuild** completo da imagem.
@@ -278,4 +278,4 @@ Essa abordagem é totalmente dinâmica: escalar o backend para cima ou para baix
 
 ### Resiliência e Políticas de Reinício
 
-Todos os serviços declaram `restart: unless-stopped`. Se um *container* encerrar inesperadamente, o Docker o reiniciará automaticamente. Health checks estão configurados para o `postgres` e o `backend` garantindo que o `frontend` inicie apenas quando suas dependências estiverem 100% prontas.
+Todos os serviços declaram `restart: unless-stopped`. Se um *container* encerrar inesperadamente, o Docker o reiniciará automaticamente. Health checks estão configurados para o `postgres` e o `backend` garantindo que o `frontend` inicie apenas quando suas dependências estiverem 100% prontas. Ademais, o serviço `backend` utiliza, por padrão 2 réplicas, declaradas através de `deploy: {replicas: 2}`.

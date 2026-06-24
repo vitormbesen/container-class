@@ -28,7 +28,7 @@ services:
       dockerfile: ./docker/backend.Dockerfile
     restart: unless-stopped
     deploy:
-      replicas: 3
+      replicas: 2
     environment:
       FLASK_APP: "run.py"
       FLASK_DB_TYPE: ${DB_TYPE:-postgres}
