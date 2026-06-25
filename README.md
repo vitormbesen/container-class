@@ -40,7 +40,7 @@ Uma implantação baseada em *containers* do Jogo de Adivinhação (Flask), orqu
 ### Arquivos Principais
 
 - **`docker/backend.Dockerfile`** — Configura o ambiente Python 3.12, instala dependências do `requirements.txt`, copia o código do jogo (`guess/`, `repository/`, `run.py`) e inicia o Flask na porta `5000`.
-- **`docker/frontend.Dockerfile`** — *Build* multi-estágio: compila a aplicação React com Node 18 e, em seguida, copia o *build* estático para uma imagem NGINX Alpine.
+- **`docker/frontend.Dockerfile`** — Multi-stage *Build* : compila a aplicação React com Node 18 e, em seguida, copia o *build* estático para uma imagem NGINX Alpine.
 - **`nginx/nginx.conf`** — Configuração do NGINX montada como um **volume** no *container* do frontend. Isso torna as regras de proxy e *load balancing* facilmente substituíveis sem a necessidade de um *rebuild* da imagem.
 - **`docker-compose.yaml`** — Define os serviços, *networks*, *volumes*, health checks e políticas de reinício.
 - **`.env`** — Variáveis de ambiente centralizadas e configuráveis pelo usuário para credenciais do *database* e configurações do backend.
@@ -149,7 +149,7 @@ docker compose down -v
 
 ---
 
-## Atualizando os Componentes (Manutenção Fácil)
+## Atualizando os Componentes
 
 O projeto foi desenhado para facilitar atualizações através do *rebuild* das imagens com novas versões. Nenhuma alteração no código-fonte da aplicação é necessária.
 
@@ -219,8 +219,8 @@ docker compose exec frontend nginx -s reload
 
 O sistema é dividido em três serviços essenciais:
 
-- **Database (`postgres`)** — Estado centralizado para salas de jogo e senhas. Isolado na *network* de backend.
-- **Backend (`backend`)** — API Flask stateless. Múltiplas instâncias fornecem **resiliência**; se um *container* falhar, os outros continuam servindo as requisições.
+- **Database (`postgres`)** — Database com persistência para Game IDs e Password. Isolado na *network* de backend.
+- **Backend (`backend`)** — API Flask com business logic. Múltiplas instâncias fornecem **resiliência**; se um *container* falhar, os outros continuam servindo as requisições.
 - **Frontend (`frontend`)** — Combina o SPA React e o proxy reverso NGINX em um único *container*, reduzindo a complexidade ao mesmo tempo em que mantém uma separação limpa de responsabilidades.
 
 ### Como o Backend Descobre o Database
@@ -259,7 +259,7 @@ Duas *networks* do tipo bridge foram definidas:
 
 ### Estratégia de *Load Balancing*
 
-O `nginx/nginx.conf` utiliza um bloco `upstream` com resolução dinâmica de DNS:
+O `nginx/nginx.conf` utiliza um bloco `upstream` com resolução dinâmica de DNS (em versões anteriores, isso era possível apenas com a [versão paga do NGINX](https://blog.nginx.org/blog/dynamic-dns-resolution-open-sourced-in-nginx)):
 
 ```nginx
 upstream backend_servers {
@@ -279,3 +279,7 @@ Essa abordagem é totalmente dinâmica: escalar o backend para cima ou para baix
 ### Resiliência e Políticas de Reinício
 
 Todos os serviços declaram `restart: unless-stopped`. Se um *container* encerrar inesperadamente, o Docker o reiniciará automaticamente. Health checks estão configurados para o `postgres` e o `backend` garantindo que o `frontend` inicie apenas quando suas dependências estiverem 100% prontas. Ademais, o serviço `backend` utiliza, por padrão 2 réplicas, declaradas através de `deploy: {replicas: 2}`.
+
+___
+
+Este README foi gerado com assistência de LLMs.
