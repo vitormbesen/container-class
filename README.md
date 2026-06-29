@@ -74,8 +74,8 @@ Docker Compose version v2.27.0
 ### 1. Clone o Repositório
 
 ```bash
-git clone https://github.com/fams/guess_game.git
-cd guess_game
+git clone https://github.com/vitormbesen/container-class.git
+cd container-class
 ```
 
 ### 2. Configure as Variáveis de Ambiente
